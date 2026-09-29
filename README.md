@@ -69,4 +69,4 @@ Once the Docker containers are running, explore the interactive API documentatio
 ## 🌿 Git Branch Workflow
 
 - `main` / `master`: Production-ready releases.
-- `development`: Active feature integration branch.
+- `development`: Active feature integration branch. 
