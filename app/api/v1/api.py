@@ -5,4 +5,4 @@ api_router = APIRouter()
 
 api_router.include_router(owners.router, prefix="/owners", tags=["Owners"])
 api_router.include_router(animals.router, prefix="/animals", tags=["Animals"])
-api_router.include_router(vaccines.router, tags=["Vaccines"])
+api_router.include_router(vaccines.router, tags=["Vaccines"]) 
