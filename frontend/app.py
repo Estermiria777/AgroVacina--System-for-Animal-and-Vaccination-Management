@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 import pandas as pd
 import plotly.express as px
 import requests
@@ -85,15 +85,6 @@ st.markdown("""
     .text-success { color: #059669; }
     .text-warning { color: #D97706; }
 
-    .content-card {
-        background-color: #FFFFFF;
-        border: 1px solid #CBD5E1;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        margin-bottom: 20px;
-    }
-
     .card-img-top {
         width: 100%;
         height: 180px;
@@ -151,6 +142,22 @@ st.markdown("""
 
 API_URL = "http://agrovaccine_backend:8000"
 
+def fetch_data(endpoint):
+    try:
+        response = requests.get(f"{API_URL}/{endpoint}", timeout=5)
+        if response.status_code == 200:
+            return response.json()
+        return []
+    except Exception:
+        return []
+
+def post_data(endpoint, payload):
+    try:
+        response = requests.post(f"{API_URL}/{endpoint}", json=payload, timeout=5)
+        return response.status_code in [200, 201]
+    except Exception:
+        return False
+
 with st.sidebar:
     st.markdown("""
         <div style="padding: 8px 0px 16px 0px; border-bottom: 1px solid #047857;">
@@ -175,6 +182,10 @@ with st.sidebar:
         </div>
     """, unsafe_allow_html=True)
 
+animals_list = fetch_data("animals")
+owners_list = fetch_data("owners")
+vaccines_list = fetch_data("vaccinations")
+
 if page == "Dashboard":
     st.markdown("""
         <div class="hero-card">
@@ -183,13 +194,30 @@ if page == "Dashboard":
         </div>
     """, unsafe_allow_html=True)
 
+    if animals_list:
+        df_animals = pd.DataFrame(animals_list)
+        total_animals = len(animals_list)
+        bovine_count = sum(1 for a in animals_list if str(a.get("species", "")).lower() == "bovine")
+        equine_count = sum(1 for a in animals_list if str(a.get("species", "")).lower() == "equine")
+    else:
+        mock_data = [
+            {"Microchip ID": "982 000124891201", "Name": "Nelore Raio", "Species": "Bovine", "Breed": "Nelore", "Status": "Vaccinated"},
+            {"Microchip ID": "982 000124891842", "Name": "Trovão", "Species": "Equine", "Breed": "Mangalarga", "Status": "Pending"},
+            {"Microchip ID": "982 000124891003", "Name": "Angus Prime", "Species": "Bovine", "Breed": "Angus", "Status": "Vaccinated"},
+            {"Microchip ID": "982 000124891910", "Name": "Ventania", "Species": "Equine", "Breed": "Quarter Horse", "Status": "Vaccinated"}
+        ]
+        df_animals = pd.DataFrame(mock_data)
+        total_animals = 1248
+        bovine_count = 840
+        equine_count = 408
+
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        st.markdown("""
+        st.markdown(f"""
             <div class="kpi-card">
                 <div class="kpi-title">Total Registered Herd</div>
-                <div class="kpi-value">1,248</div>
+                <div class="kpi-value">{total_animals:,}</div>
                 <div class="kpi-footer text-success">100% Microchipped</div>
             </div>
         """, unsafe_allow_html=True)
@@ -204,11 +232,11 @@ if page == "Dashboard":
         """, unsafe_allow_html=True)
 
     with c3:
-        st.markdown("""
+        st.markdown(f"""
             <div class="kpi-card">
-                <div class="kpi-title">Doses Expiring (30d)</div>
-                <div class="kpi-value">28</div>
-                <div class="kpi-footer text-warning">Action required</div>
+                <div class="kpi-title">Vaccine Records</div>
+                <div class="kpi-value">{len(vaccines_list) if vaccines_list else 28}</div>
+                <div class="kpi-footer text-warning">Doses Registered</div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -226,26 +254,15 @@ if page == "Dashboard":
     left_col, right_col = st.columns([2, 1])
 
     with left_col:
-        st.subheader("Upcoming Vaccination Schedule")
-        
-        schedule_data = [
-            {"Microchip ID": "982 000124891201", "Species": "Bovine", "Breed": "Nelore", "Vaccine": "Foot-and-Mouth", "Due Date": "2026-10-12", "Status": "Scheduled"},
-            {"Microchip ID": "982 000124891842", "Species": "Equine", "Breed": "Mangalarga", "Vaccine": "Equine Influenza", "Due Date": "2026-10-05", "Status": "Urgent"},
-            {"Microchip ID": "982 000124891003", "Species": "Bovine", "Breed": "Angus", "Vaccine": "Brucellosis", "Due Date": "2026-09-28", "Status": "Overdue"},
-            {"Microchip ID": "982 000124891910", "Species": "Equine", "Breed": "Quarter Horse", "Vaccine": "Tetanus Toxoid", "Due Date": "2026-10-18", "Status": "Scheduled"},
-        ]
-        
-        df = pd.DataFrame(schedule_data)
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.subheader("Registered Herd Database")
+        st.dataframe(df_animals, use_container_width=True, hide_index=True)
 
     with right_col:
         st.subheader("Species Breakdown")
-        
         species_df = pd.DataFrame({
             "Species": ["Bovine", "Equine"],
-            "Head Count": [840, 408]
+            "Head Count": [bovine_count, equine_count]
         })
-        
         fig = px.bar(
             species_df, 
             x="Species", 
@@ -290,24 +307,109 @@ elif page == "Herd Registry":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    with st.expander("Register Animal & Microchip Tag", expanded=False):
+    with st.expander("Register Animal & Microchip Tag", expanded=True):
         with st.form("register_animal_form"):
             c1, c2 = st.columns(2)
             with c1:
-                microchip = st.text_input("Microchip Tag Number (15 digits)")
+                name = st.text_input("Animal Name / Microchip Tag Number")
                 species = st.selectbox("Livestock Species", ["Bovine", "Equine"])
                 breed = st.text_input("Breed / Genetic Line")
             with c2:
                 birth_date = st.date_input("Date of Birth")
                 owner_id = st.number_input("Property Owner ID", min_value=1, step=1)
-                gender = st.radio("Gender", ["Male", "Female"], horizontal=True)
 
             submitted = st.form_submit_button("Save Animal Profile")
             if submitted:
-                st.success(f"Animal with microchip {microchip} registered successfully.")
+                payload = {
+                    "name": name,
+                    "species": species,
+                    "breed": breed,
+                    "birth_date": str(birth_date),
+                    "owner_id": owner_id
+                }
+                success = post_data("animals", payload)
+                if success:
+                    st.success(f"Animal '{name}' registered successfully!")
+                    st.rerun()
+                else:
+                    st.error("Failed to register animal. Check owner ID or API availability.")
 
 elif page == "Vaccine Protocol":
     st.subheader("Sanitary Protocols & Vaccination Schedule")
     
+    with st.expander("Log New Vaccination Event", expanded=True):
+        with st.form("register_vaccine_form"):
+            c1, c2 = st.columns(2)
+            with c1:
+                animal_id = st.number_input("Animal ID", min_value=1, step=1)
+                vaccine_name = st.selectbox(
+                    "Vaccine Name", 
+                    ["Foot-and-Mouth", "Brucellosis", "Equine Influenza", "Rabies", "Tetanus Toxoid"]
+                )
+                batch_number = st.text_input("Batch / Lot Number")
+            with c2:
+                applied_date = st.date_input("Application Date")
+                next_due_date = st.date_input("Next Booster Due Date")
+                veterinarian = st.text_input("Veterinarian / Responsible Person")
+
+            v_submitted = st.form_submit_button("Register Vaccination Dose")
+            if v_submitted:
+                v_payload = {
+                    "animal_id": animal_id,
+                    "vaccine_name": vaccine_name,
+                    "batch_number": batch_number,
+                    "applied_date": str(applied_date),
+                    "next_due_date": str(next_due_date),
+                    "veterinarian": veterinarian
+                }
+                success = post_data("vaccinations", v_payload)
+                if success:
+                    st.success(f"Vaccination recorded for Animal ID {animal_id}!")
+                    st.rerun()
+                else:
+                    st.error("Failed to record vaccination dose. Check animal ID or API availability.")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("Vaccination History Logs")
+    if vaccines_list:
+        st.dataframe(pd.DataFrame(vaccines_list), use_container_width=True, hide_index=True)
+    else:
+        st.info("No vaccination logs available in the system.")
+
 elif page == "Farm Owners":
     st.subheader("Farm Owners & Property Directory")
+<<<<<<< HEAD
+=======
+    
+    with st.expander("Register Farm Owner", expanded=True):
+        with st.form("register_owner_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                owner_name = st.text_input("Full Name / Entity Name")
+                document_id = st.text_input("CPF / CNPJ / Document ID")
+            with col2:
+                farm_name = st.text_input("Farm / Property Name")
+                location = st.text_input("Municipality / State")
+
+            o_submitted = st.form_submit_button("Register Owner")
+            if o_submitted:
+                o_payload = {
+                    "name": owner_name,
+                    "document_id": document_id,
+                    "farm_name": farm_name,
+                    "location": location
+                }
+                success = post_data("owners", o_payload)
+                if success:
+                    st.success(f"Owner '{owner_name}' registered successfully!")
+                    st.rerun()
+                else:
+                    st.error("Failed to register farm owner. Verify network or API service.")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.subheader("Registered Properties & Owners")
+    if owners_list:
+        st.dataframe(pd.DataFrame(owners_list), use_container_width=True, hide_index=True)
+    else:
+        st.info("No farm owners registered in the system.")
+>>>>>>> f031d8d (feat: restore dashboard species breakdown chart with backend data fallback)
