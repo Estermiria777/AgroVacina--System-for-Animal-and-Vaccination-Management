@@ -9,7 +9,7 @@ from app.schemas.animal import AnimalResponse
 
 class OwnerBase(BaseModel):
     name: str = Field(..., min_length=2, max_length=100, example="John Doe")
-    email: EmailStr = Field(..., example="johndoe@example.com")
+    email: EmailStr = Field(..., json_schema_extra={"example": "johndoe@example.com"})
     phone: Optional[str] = Field(None, example="+1234567890")
 
 
