@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 class Animal(ABC):
     def __init__(self, id, name, greed, age):
         self.id = id
-        self.name = name
+        self.name = name 
         self.greed=greed
         self.age = age
 
