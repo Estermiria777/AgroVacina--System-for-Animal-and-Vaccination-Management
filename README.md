@@ -1,6 +1,6 @@
 # 🛡️ AgroVacina — Digital Herd & Vaccination Traceability
 
-> **Full-Stack Platform for Livestock Sanitary Traceability, Vaccination Control, and Herd Management (Bovine & Equine).**
+> **Full-Stack Platform for Livestock Sanitary Traceability, Vaccination Control, and Herd Management (Bovine & Equine).** 
 
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
