@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
 ---
-
+ 
 ## 📌 About The Project
 
 **AgroVacina** is a comprehensive AgTech solution designed to streamline livestock sanitary tracking, microchip identification, and immunization history for cattle and horses (Bovine and Equine livestock).
